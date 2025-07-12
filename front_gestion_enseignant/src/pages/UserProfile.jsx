@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { Link } from 'react-router-dom';
 import ProfileSection from '../components/ProfileSection'; // Assure-toi que le chemin est correct
 import { useUser } from '../hooks/useUser'; // Importe le hook useUser
 import { useModal } from '../hooks/useModal'; // Assure-toi que le chemin est correct pour ton hook de modal
 import { UserModal } from '../components/modals/UserModal'; // Assure-toi que le chemin est correct pour ton composant de modal
+import { PasswordUpdateModal } from '../components/modals/PasswordUpdateModal';
 
 export default function ProfileSettings() {
   // Accès au contexte utilisateur
-  const { user, loading, error, updateUser } = useUser();
-  
+  const { user, loading, error, updateUser, fetchUser } = useUser();
+
+
   // Accès au hook de modal
   const { openModal } = useModal();
 
@@ -33,8 +35,14 @@ export default function ProfileSettings() {
   }, [user]); // Déclenche cet effet chaque fois que l'objet 'user' du contexte change
 
   const handleOpenEditModal = () => {
-    openModal(UserModal, { userData: user, onUpdateSuccess: updateUser });
-  };
+    openModal(UserModal, { userData: user, onUpdateSuccess: updateUser })
+  }
+
+    const handleOpenPasswordModal = () => {
+        if (user) {
+            openModal(PasswordUpdateModal, { userData: user });
+        }
+    };
 
   // --- Gestion des états de chargement et d'erreur de l'utilisateur ---
   if (loading) {
@@ -162,7 +170,7 @@ export default function ProfileSettings() {
                 Mise à jour de sécurité
               </h2>
               <button 
-                onClick={handleOpenEditModal} // Appelle la nouvelle fonction
+                onClick={handleOpenPasswordModal} // Appelle la nouvelle fonction
                 className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors duration-200 w-full sm:w-auto justify-center"
               >
                 <i className="fa-solid fa-lock"></i>

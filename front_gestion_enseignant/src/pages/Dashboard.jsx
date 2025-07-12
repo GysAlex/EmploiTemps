@@ -100,7 +100,7 @@ export default function Dashboard() {
 
         {/* Room availability */}
         <Card title="Salles de classe">
-          <div className="flex justify-between gap-2 mb-4">
+          <div className="flex justify-between flex-wrap gap-2 mb-4">
             <StatBox label="Total" value={45} />
             <StatBox label="Occupées" value={28} valueClass="text-red-500" />
             <StatBox label="Disponibles" value={17} valueClass="text-green-600" />
@@ -154,7 +154,7 @@ function Legend({ items }) {
 
 function StatBox({ label, value, valueClass = "text-gray-800" }) {
   return (
-    <div className="flex flex-col items-center gap-1 bg-gray-50 rounded-lg px-3 py-2 text-sm">
+    <div className="flex flex-col min-w-[95px] flex-grow items-center gap-1 bg-gray-50 rounded-lg px-3 py-2 text-sm">
       <span className="text-gray-500">{label}</span>
       <span className={`font-semibold ${valueClass}`}>{value}</span>
     </div>

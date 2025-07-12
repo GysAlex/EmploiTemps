@@ -64,4 +64,9 @@ class User extends Authenticatable
     {
         return $this->roles->contains('name', $roleName);
     }
+
+    public function taughtCourseSessions()
+    {
+        return $this->hasMany(CourseSession::class, 'teacher_id'); // 'teacher_id' est la FK pour les enseignants
+    }
 }

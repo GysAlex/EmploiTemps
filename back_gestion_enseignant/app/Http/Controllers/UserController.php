@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate; // Pour l'autorisation
@@ -104,8 +104,9 @@ class UserController extends Controller
 
             // 4. Gestion de la mise à jour des rôles
             // Vérifier si des rôles ont été envoyés ET si l'utilisateur connecté est un 'super_admin'
+            // dd($request->user()->roles);
             $authUserRoles = $request->user()->roles->pluck('name')->toArray(); // Assurez-vous que les rôles de l'utilisateur connecté sont chargés
-            
+
             if (isset($validatedData['roles']) && in_array('super_admin', $authUserRoles)) {
                 $rolesToSyncNames = $validatedData['roles']; // Pas besoin de conversion ici !
 
@@ -117,7 +118,7 @@ class UserController extends Controller
             }
 
             DB::commit(); // Valide la transaction
-            
+
            return $request->user()->load('roles');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -129,4 +130,42 @@ class UserController extends Controller
             return response()->json(['message' => 'Une erreur est survenue lors de la mise à jour du profil.'], 500);
         }
     }
+
+    public function updatePassword(Request $request, User $user)
+    {
+        Gate::authorize('update', $user); // Assurez-vous que votre UserPolicy gère bien cela.
+
+        // 2. Validation des données
+        $validatedData = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'], // 'confirmed' vérifie 'password_confirmation'
+        ], [
+            'current_password.required' => 'Le mot de passe actuel est obligatoire.',
+            'current_password.string' => 'Le mot de passe actuel doit être une chaîne de caractères.',
+
+            'password.required' => 'Le nouveau mot de passe est obligatoire.',
+            'password.string' => 'Le nouveau mot de passe doit être une chaîne de caractères.',
+            'password.min' => 'Le nouveau mot de passe doit contenir au moins :min caractères.',
+            'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+        ]);
+
+        // 3. Vérifier que le mot de passe actuel est correct
+        if (!Hash::check($validatedData['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'Le mot de passe actuel est incorrect.',
+                'errors' => [
+                    'current_password' => ['Le mot de passe actuel fourni est incorrect.']
+                ]
+            ], 422); // Unprocessable Entity
+        }
+
+        // 4. Mettre à jour le mot de passe
+        $user->password = Hash::make($validatedData['password']);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Mot de passe mis à jour avec succès !'
+        ], 200);
+    }
+
 }

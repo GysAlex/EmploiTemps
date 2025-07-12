@@ -4,6 +4,7 @@
 	font-family: Poppins, Helvetica;
 }
 
+
 .float-slow
 {
 	animation: "float 10s ease-in-out infinite";

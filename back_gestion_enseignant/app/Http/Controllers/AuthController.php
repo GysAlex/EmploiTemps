@@ -32,13 +32,13 @@ class AuthController extends Controller
         Auth::login($user);
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->load('roles'),
             // 'access_token' => $token, // À inclure SEULEMENT si tu utilises aussi des tokens API
             // 'token_type' => 'Bearer', // À inclure SEULEMENT si tu utilises aussi des tokens API
         ], 200);
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::guard('web')->logout(); //It work's i don't even know why
         $request->session()->invalidate();

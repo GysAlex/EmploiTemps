@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
+use App\Models\Role;
 
 Route::get('/', function () {
     return ['Laravel' => app()->version()];
@@ -10,10 +11,12 @@ Route::get('/', function () {
 require __DIR__.'/auth.php';
 
 
-Route::get('/setRole', function(){
-    // $user = User::find(1);
-    
-    // $user->roles()->attach(1);
+Route::get('/setUser', function(){
 
-    // echo 'done !';
+    // $user = User::find(1);
+
+    // $user->roles()->attach([1, 2]);
+
+    // echo "done !";
+
 });

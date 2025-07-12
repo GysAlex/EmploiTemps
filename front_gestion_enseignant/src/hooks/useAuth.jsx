@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState} from "react"
+import { createContext, use, useContext, useEffect, useState} from "react"
 import axios from "axios"
 import { toast } from "sonner"
+import { formatImageUrl } from "../utils/imageUtils"
+import { useNavigate } from "react-router-dom"
 
 axios.defaults.withCredentials = true
 axios.defaults.withXSRFToken=true
@@ -20,6 +22,7 @@ export function AuthContextProvider({children})
 
     const [loading, setLoading] = useState(true)
 
+
     const checkAuth = async () => {
     try {
         await axios.get('/sanctum/csrf-cookie');
@@ -27,7 +30,12 @@ export function AuthContextProvider({children})
         console.log(response)
 
         if (response.status === 200) {
-            setUser(response.data);
+            
+            const userData = {
+                ...response.data,
+                profile_image: formatImageUrl(response.data.profile_image)
+            }
+            setUser(userData);
             //setRole(response.data.roles.map((el) => el.name))
             //console.log(role)
             setUserState(true);
@@ -53,16 +61,43 @@ export function AuthContextProvider({children})
 
 
     const logout = async () => {
+        const logoutPromise = new Promise(async (resolve, reject) => {
+            try {
+                await axios.get('/sanctum/csrf-cookie'); // Obtient le CSRF cookie
+                await axios.post("/api/logout"); // Appel à l'endpoint de déconnexion
+
+                setUser(null);
+                
+                setRole([]);
+                
+                setUserState(false);
+                
+
+                resolve('Déconnexion réussie !'); // Résout la promesse en cas de succès
+            } catch (error) {
+                console.error("Erreur détaillée lors de la déconnexion :", error);
+                // Gérer les messages d'erreur spécifiques de l'API si disponibles
+                const errorMessage = error.response?.data?.message || "Une erreur est survenue lors de la déconnexion.";
+                reject(errorMessage); // Rejette la promesse en cas d'erreur
+            }
+        });
+
+        // Utilisation de toast.promise pour afficher les notifications de manière élégante
+        toast.promise(logoutPromise, {
+            loading: 'Déconnexion en cours...', // Message affiché pendant l'opération
+            success: (message) => message,     // Message affiché en cas de succès (vient de la résolution de la promesse)
+            error: (error) => error,           // Message affiché en cas d'erreur (vient du rejet de la promesse)
+        });
+
         try {
-            await axios.post("/api/logout"); // Appel à l'endpoint de déconnexion
-            setUser(null); 
-            setRole([]); 
-            setUserState(false); 
+            await logoutPromise; // Attendre la fin de la promesse pour le comportement asynchrone
+            // Redirection ou autre logique post-déconnexion ici si nécessaire
+            // Par exemple, rediriger vers la page de connexion:
+            // window.location.href = '/login';
         } catch (error) {
-            console.error("Erreur lors de la déconnexion", error);
+            // L'erreur est déjà gérée par toast.promise, pas besoin de la gérer ici sauf si vous voulez un traitement additionnel.
         }
     };
-
     const login = async (formData) =>{
         try {
             await axios.get('/sanctum/csrf-cookie')
@@ -71,7 +106,11 @@ export function AuthContextProvider({children})
                 'password': formData.password
             })
 
-            setUser(response.data)
+            const userData = {
+                ...response.data,
+                profile_image: formatImageUrl(response.data.profile_image)
+            }
+            setUser(userData)
             //setRole(response.data.roles.map((el) => el.name))
             //console.log(role)
             

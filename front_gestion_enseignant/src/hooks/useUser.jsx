@@ -149,6 +149,45 @@ export const UserProvider = ({ children }) => {
         return promise;
     };
 
+    const updateUserPassword = async (userId, data) => {
+        if (!userId) {
+            toast.error("ID utilisateur manquant pour la mise à jour du mot de passe.");
+            throw new Error("User ID is required.");
+        }
+
+        const passwordUpdatePromise = axios.put(`/api/user/${userId}/password`, data, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+        });
+
+        toast.promise(passwordUpdatePromise, {
+            loading: 'Mise à jour du mot de passe...',
+            success: (response) => {
+                return response.data.message || 'Mot de passe mis à jour avec succès !';
+            },
+            error: (err) => {
+                const errors = err.response?.data?.errors;
+                if (errors) {
+                    // Si le backend renvoie des erreurs de validation spécifiques, affichez-les.
+                    const firstError = Object.values(errors)[0][0]; // Prend le premier message d'erreur de la première clé
+                    return firstError;
+                }
+                const errorMessage = err.response?.data?.message || 'Échec de la mise à jour du mot de passe.';
+                console.error("Erreur lors de la mise à jour du mot de passe (API) :", err);
+                return errorMessage;
+            },
+        });
+
+        try {
+            const response = await passwordUpdatePromise;
+            return response.data;
+        } catch (err) {
+            throw err; // Propage l'erreur pour que le composant appelant puisse la gérer si besoin
+        }
+    };
+
     useEffect(() => {
         fetchUser();
     }, []);
@@ -160,6 +199,7 @@ export const UserProvider = ({ children }) => {
         fetchUser, // Permet de rafraîchir l'utilisateur manuellement si nécessaire
         updateUser, // Maintenant gère l'API call et la mise à jour du contexte
         updateProfileImage,
+		updateUserPassword,
     };
 
     return (
