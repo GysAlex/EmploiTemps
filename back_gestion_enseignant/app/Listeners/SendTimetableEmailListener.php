@@ -55,7 +55,7 @@ class SendTimetableEmailListener implements ShouldQueue
             }
 
         } catch (\Exception $e) {
-            Log::error('Listener: Erreur lors de l\'envoi de l\'e-mail de l\'emploi du temps (Markdown) : ' . $e->getMessage() . ' Timetable ID: ' . $timetable->id);
+            Log::error('Listener: Erreur lors de l\'envoi de l\'e-mail de l\'emploi du temps (Markdown) : ' . $e->getMessage() . ' Timetable ID: ' . $timetable);
         }
     }
 }

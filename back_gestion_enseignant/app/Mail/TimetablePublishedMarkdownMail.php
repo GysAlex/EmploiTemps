@@ -46,7 +46,7 @@ class TimetablePublishedMarkdownMail extends Mailable
             markdown: 'emails.timetables.published',
             with: [
                 'promotionName' => $this->promotion->name,
-                'delegateName' => $this->$promotion->students()->where('is_delegate', true)->first()->full_name,
+                'delegateName' => $this->promotion->students()->where('is_delegate', true)->first()->full_name,
                 'weekId' => $this->timetable->week->week_id,
                 'startDate' => Carbon::parse($this->timetable->week->start_date)->format('d/m/Y'),
                 'endDate' => Carbon::parse($this->timetable->week->end_date)->format('d/m/Y'),
