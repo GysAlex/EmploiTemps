@@ -9,16 +9,19 @@ use Illuminate\Validation\Rule;
 class CourseController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::with('user')->get();
+        $query = Course::with('user');
 
-        return response()->json([
-            'message' => 'Liste des cours récupérée avec succès.',
-            'data' => $courses
-        ]);
+        if ($request->has('level')) {
+            $level = $request->query('level');
+            $query->where('level', $level);
+        }
+
+        $courses = $query->get();
+
+        return response()->json($courses);
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -28,7 +31,7 @@ class CourseController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'level' => ['required', 'string', Rule::in(['Niveau 1', 'Niveau 2', 'Niveau 3'])],
-            'user_id' => [ 
+            'user_id' => [
                 'nullable',
                 'exists:users,id'],
         ], [
@@ -69,7 +72,7 @@ class CourseController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'level' => ['required', 'string', Rule::in(['Niveau 1', 'Niveau 2', 'Niveau 3'])],
-            'user_id' => [ 
+            'user_id' => [
                 'nullable',
                 'exists:users,id'
             ],

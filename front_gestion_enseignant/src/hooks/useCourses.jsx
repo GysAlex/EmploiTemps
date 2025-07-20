@@ -16,16 +16,16 @@ export function CourseProvider({ children }) {
     const [validationErrors, setValidationErrors] = useState({});
 
     // Stabilisez fetchCourses avec useCallback
-    const fetchCourses = useCallback(async () => {
+    const fetchCourses = async () => {
         setLoading(true);
         setError(null);
         try {
             // Adaptez l'URL de l'API pour les cours
             await axios.get('/sanctum/csrf-cookie'); // Obtention du cookie CSRF
             const response = await axios.get('/api/courses');
+            
+            setCourses(response.data);
 
-            setCourses(response.data.data);
-            console.log("Cours récupérés dans le Contexte:", response.data.data);
         } catch (err) {
             console.error("Erreur lors de la récupération des cours (Contexte):", err);
             setError(err);
@@ -33,8 +33,11 @@ export function CourseProvider({ children }) {
         } finally {
             setLoading(false);
         }
-    }, []); // Dépendances vides pour que fetchCourses soit stable
+    } // Dépendances vides pour que fetchCourses soit stable
 
+    useEffect(() => {
+        fetchCourses();  
+    }, []); 
 
     // Fonctions de modification qui déclenchent le re-fetch
     const createCourse = async (courseData) => {

@@ -110,7 +110,7 @@ export function AuthContextProvider({children})
                 ...response.data,
                 profile_image: formatImageUrl(response.data.profile_image)
             }
-            setUser(userData)
+            setUser(userData.user)
             //setRole(response.data.roles.map((el) => el.name))
             //console.log(role)
             

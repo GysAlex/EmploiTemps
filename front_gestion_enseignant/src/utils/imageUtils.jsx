@@ -1,23 +1,17 @@
-export const formatImageUrl = (imageUrl) => {
-  // Définis l'URL de base de ton backend Laravel
-  const BASE_URL = 'http://localhost:8000';
-  // Définis une image par défaut si imageUrl n'existe pas
-  const DEFAULT_IMAGE = 'https://via.placeholder.com/150?text=No+Image'; // Ou une image par défaut de ton choix
+export const formatImageUrl = (imageUrl, name = '') => {
+  const BASE_URL = 'http://localhost:8000'
 
   if (!imageUrl) {
-    return DEFAULT_IMAGE;
+    const encodedName = encodeURIComponent(name || 'Utilisateur')
+    return `https://ui-avatars.com/api/?name=${encodedName}&background=E0F2F7&color=0694A2&bold=true`
   }
-
-  // Vérifie si l'URL est déjà une URL absolue (par ex. si tu utilises des CDN ou des URLs externes)
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl;
+    return imageUrl
   }
 
-  // Si l'URL relative commence déjà par 'storage/', pas besoin de l'ajouter
   if (imageUrl.startsWith('storage/')) {
-    return `${BASE_URL}/${imageUrl}`;
+    return `${BASE_URL}/${imageUrl}`
   }
 
-  // Pour les URLs comme 'profile_images/avatar.jpg', ajoute 'storage/'
-  return `${BASE_URL}/storage/${imageUrl}`;
-};
+  return `${BASE_URL}/storage/${imageUrl}`
+}

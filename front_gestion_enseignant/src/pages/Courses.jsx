@@ -14,6 +14,8 @@ const Courses = () => {
     const { openModal } = useModal();
     const { courses, deleteCourse, loading, error, fetchCourses } = useCourses();
 
+    console.log("Bonjour tout le monde, voici les cours:", courses);
+
     const [search, setSearch] = useState("");
     const [levelFilter, setLevelFilter] = useState("Tous les niveaux");
     const [teacherFilter, setTeacherFilter] = useState("Tous les enseignants");

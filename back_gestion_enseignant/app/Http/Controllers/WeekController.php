@@ -31,9 +31,13 @@ class WeekController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Week $week)
     {
-        //
+        if($week) {
+            return response()->json($week);
+        } else {
+            return response()->json(['message' => 'Semaine non trouvée'], 404);
+        }
     }
 
     /**

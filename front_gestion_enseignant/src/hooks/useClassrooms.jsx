@@ -25,8 +25,8 @@ export function ClassroomProvider({ children }) {
             const response = await axios.get('/api/classrooms');
             // Assurez-vous que la structure de la réponse de votre API correspond
             // Par exemple, si Laravel retourne { data: [...] }
-            setClassrooms(response.data.data);
-            console.log("Salles de classe récupérées dans le Contexte:", response.data.data);
+            setClassrooms(response.data);
+            console.log("Salles de classe récupérées dans le Contexte:", response.data);
         } catch (err) {
             console.error("Erreur lors de la récupération des salles de classe (Contexte):", err);
             setError(err);

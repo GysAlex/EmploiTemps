@@ -159,7 +159,6 @@ class UserManagementController extends Controller
 
                 'password.string' => 'Le mot de passe doit être une chaîne de caractères.',
                 'password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
-                'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
 
                 'phone.string' => 'Le numéro de téléphone doit être une chaîne de caractères.',
                 'phone.max' => 'Le numéro de téléphone ne doit pas dépasser 20 caractères.',

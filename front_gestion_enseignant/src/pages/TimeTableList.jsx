@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye, FaEdit, FaCalendarAlt, FaClock, FaUsers, FaExclamationCircle } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaSearch, FaDownload, FaEdit, FaCalendarAlt, FaClock, FaUsers, FaExclamationCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useManageTimetables } from '../hooks/useManageTimeTables';
 import { TimetableSkeletonLoader } from '../components/skeletons/TimeTableSkeletonLoader'; // <-- Assurez-vous que ce chemin est correct
 import formatFrenchDate from '../utils/frenchFormatDate'; // <-- Assurez-vous que ce chemin est correct et que la fonction est exportée par défaut
+import { toast } from 'sonner'; // Importation de Sonner pour les notifications
 
 
 // Fonction utilitaire pour obtenir la couleur du statut
@@ -20,11 +21,6 @@ const getStatusColor = (status) => {
 // Fonction utilitaire pour obtenir la couleur du niveau
 const getNiveauColor = (level) => {
     switch (level) {
-        case 'Licence 1': return 'bg-blue-100 text-blue-700 border-blue-200';
-        case 'Licence 2': return 'bg-purple-100 text-purple-700 border-purple-200';
-        case 'Licence 3': return 'bg-pink-100 text-pink-700 border-pink-200';
-        case 'Master 1': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-        case 'Master 2': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
         case 'Niveau 1': return 'bg-blue-100 text-blue-700 border-blue-200'; // Ajout pour correspondre à votre fichier
         case 'Niveau 2': return 'bg-green-100 text-green-700 border-green-200'; // Ajout pour correspondre à votre fichier
         case 'Niveau 3': return 'bg-purple-100 text-purple-700 border-purple-200'; // Ajout pour correspondre à votre fichier
@@ -55,8 +51,6 @@ export default function TimeTableList() {
                             setSelectedWeekId(current.id);
                         } else {
                             setSelectedWeekId(response.data[0].id); // Sélectionne la première si aucune actuelle
-                            console.log("or here")
-
                         }
                     }
                 }
@@ -136,6 +130,46 @@ export default function TimeTableList() {
             </div>
         );
     }
+
+    const handleDownloadTimetablePdf = async (timetableId) => {
+        if (!timetableId) {
+            toast.error("L'ID de l'emploi du temps est manquant. Impossible de télécharger le PDF.");
+            return;
+        }
+        try {
+            const response = await axios.get(`/api/timetables/${timetableId}/download-pdf`, {
+                responseType: 'blob', // Important for downloading files
+            });
+
+            // Create a blob URL and trigger download
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+
+            // Extract filename from Content-Disposition header if available
+            const contentDisposition = response.headers['content-disposition'];
+            let fileName = 'emploi_du_temps.pdf'; // Default filename
+            if (contentDisposition) {
+                const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (fileNameMatch && fileNameMatch[1]) {
+                    fileName = fileNameMatch[1];
+                }
+            }
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url); // Clean up the URL object
+
+            toast.success("Le téléchargement du PDF a démarré !");
+
+        } catch (err) {
+            console.error("Error downloading timetable PDF:", err);
+            toast.error("Erreur lors du téléchargement du PDF. Veuillez vérifier la console.");
+        }
+    };
+
+
 
     return (
         <div className="min-h-screen">
@@ -298,7 +332,7 @@ export default function TimeTableList() {
                                 <table className="min-w-full divide-y divide-slate-200">
                                     <thead className="bg-slate-50">
                                         <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"></th>
+                                            {/* Checkbox column removed */}
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Semaine</th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Niveau</th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Promotion</th>
@@ -309,17 +343,15 @@ export default function TimeTableList() {
                                     <tbody className="bg-white divide-y divide-slate-200">
                                         {filteredPromotionsByLevel.length === 0 ? (
                                             <tr>
-                                                <td colSpan="6" className="px-6 py-4 whitespace-nowrap text-center text-slate-500">
+                                                <td colSpan="5" className="px-6 py-4 whitespace-nowrap text-center text-slate-500">
                                                     Aucune promotion trouvée pour cette semaine ou ces critères.
                                                 </td>
                                             </tr>
                                         ) : (
                                             filteredPromotionsByLevel.map(promotion => (
                                                 <tr key={promotion.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <input type="checkbox" className="form-checkbox h-4 w-4 text-cyan-600 transition duration-150 ease-in-out rounded" />
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">Sem. {promotion.week_id}</td>
+                                                    {/* Checkbox removed */}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">Semaine {displayedWeek.week_id}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getNiveauColor(promotion.level)}`}>
                                                             {promotion.level}
@@ -334,7 +366,7 @@ export default function TimeTableList() {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(promotion.timetable_status)}`}>
+                                                        <span className={`px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full border ${getStatusColor(promotion.timetable_status)}`}>
                                                             <div className={`w-2 h-2 rounded-full mr-2 ${
                                                                 promotion.timetable_status === 'Publié' ? 'bg-green-500' :
                                                                 promotion.timetable_status === 'En attente' ? 'bg-orange-500' : 'bg-blue-500'
@@ -343,20 +375,25 @@ export default function TimeTableList() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <div className="flex items-center space-x-2">
-                                                            <Link to={`/admin/timetables/promotion/${promotion.id}/${selectedWeekId}`} className="text-slate-600 hover:text-slate-900">
-                                                                <FaEye className="h-5 w-5" />
-                                                            </Link>
-                                                            <Link to={`/admin/timetables/promotion/${promotion.id}/${selectedWeekId}/edit`} className="text-cyan-600 hover:text-cyan-900">
-                                                                <FaEdit className="h-5 w-5" />
-                                                            </Link>
+                                                        <div className="flex items-center gap-3"> {/* Changed space-x-2 to gap-3 */}
+                                                            {/* FaEye (preview) icon removed */}
+                                                            {/* Download PDF button */}
+                                                            {promotion.timetable_id && ( // Only show if a timetable exists
+                                                                <button
+                                                                    onClick={() => handleDownloadTimetablePdf(promotion.timetable_id)}
+                                                                    className="text-cyan-600 hover:text-cyan-800" // Applied cyan color
+                                                                    title="Télécharger l'emploi du temps PDF"
+                                                                >
+                                                                    <FaDownload className="h-4 w-4" /> {/* Reduced size */}
+                                                                </button>
+                                                            )}
                                                             {promotion.timetable_status === 'En attente' ? (
-                                                                <Link to={`/timetables/${promotion.id}/create?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                                <Link to={`/dashboard/schedule/${promotion.id}/create?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                                                                     Ajouter l'EDT
                                                                 </Link>
                                                             ) : (
-                                                                <Link to={`/timetables/${promotion.id}/update?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                                                                    Mettre à jour l'EDT
+                                                                <Link to={`/dashboard/schedule/${promotion.id}/update?week_id=${selectedWeekId}`} className="text-cyan-600 hover:text-cyan-800" title="Mettre à jour l'emploi du temps"> {/* Applied cyan color */}
+                                                                    <FaEdit className="h-4 w-4" /> {/* Reduced size */}
                                                                 </Link>
                                                             )}
                                                         </div>
@@ -388,20 +425,26 @@ export default function TimeTableList() {
                                                         <h3 className="text-sm font-medium text-slate-900 truncate">
                                                             {promotion.name}
                                                         </h3>
-                                                        <div className="flex space-x-2">
-                                                            {(promotion.timetable_status === 'Publié' || promotion.timetable_status === 'Mis à jour') && (
-                                                                <Link to={`/timetables/${promotion.id}/view?week_id=${selectedWeekId}`} className="text-cyan-600 hover:text-cyan-800 transition-colors duration-150 p-1 rounded-lg hover:bg-cyan-50">
-                                                                    <FaEye />
+                                                        <div className="flex gap-3"> {/* Changed space-x-2 to gap-3 */}
+                                                            {(promotion.timetable_status === 'Publié' || promotion.timetable_status === 'Mis à jour') ? (
+                                                                <Link to={`/dashboard/schedule/${promotion.id}/update?week_id=${selectedWeekId}`} className="text-cyan-600 hover:text-cyan-800 transition-colors duration-150 p-1 rounded-lg hover:bg-cyan-50" title="Mettre à jour l'emploi du temps"> {/* Applied cyan color */}
+                                                                    <FaEdit className="h-4 w-4" /> {/* Reduced size */}
                                                                 </Link>
+                                                            ) : null}
+                                                            {promotion.timetable_id && ( // Only show if a timetable exists
+                                                                <button
+                                                                    onClick={() => handleDownloadTimetablePdf(promotion.timetable_id)}
+                                                                    className="text-cyan-600 hover:text-cyan-800 transition-colors duration-150 p-1 rounded-lg hover:bg-cyan-50" // Applied cyan color
+                                                                    title="Télécharger l'emploi du temps PDF"
+                                                                >
+                                                                    <FaDownload className="h-4 w-4" /> {/* Reduced size */}
+                                                                </button>
                                                             )}
-                                                            <Link to={`/timetables/${promotion.id}/edit?week_id=${selectedWeekId}`} className="text-cyan-600 hover:text-cyan-800 transition-colors duration-150 p-1 rounded-lg hover:bg-cyan-50">
-                                                                <FaEdit />
-                                                            </Link>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <span className="text-sm text-slate-600">
-                                                            {promotion.week_name}
+                                                            Semaine {displayedWeek.week_id}
                                                         </span>
                                                         <span className="text-slate-400">•</span>
                                                         <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getNiveauColor(promotion.level)}`}>
@@ -417,11 +460,11 @@ export default function TimeTableList() {
                                                             {promotion.timetable_status}
                                                         </span>
                                                         {promotion.timetable_status === 'En attente' ? (
-                                                            <Link to={`/timetables/${promotion.id}/create?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                            <Link to={`/dashboard/schedule/${promotion.id}/create?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                                                                 Ajouter l'EDT
                                                             </Link>
                                                         ) : (
-                                                            <Link to={`/timetables/${promotion.id}/update?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                            <Link to={`/dashboard/schedule/${promotion.id}/update?week_id=${selectedWeekId}`} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                                                                 Mettre à jour l'EDT
                                                             </Link>
                                                         )}

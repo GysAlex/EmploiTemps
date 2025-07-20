@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Role;
+use App\Http\Controllers\TimetablePromotionController;
 
 Route::get('/', function () {
     return ['Laravel' => app()->version()];
@@ -11,12 +12,4 @@ Route::get('/', function () {
 require __DIR__.'/auth.php';
 
 
-Route::get('/setUser', function(){
-
-    // $user = User::find(1);
-
-    // $user->roles()->attach([1, 2]);
-
-    // echo "done !";
-
-});
+Route::get('/timetables/{timetable}', [TimetablePromotionController::class, 'previewPdfHtml'])->name('timetables.previewPdfHtml');

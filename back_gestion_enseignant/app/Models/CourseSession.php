@@ -55,6 +55,6 @@ class CourseSession extends Model
      */
     public function timeSlot()
     {
-        return $this->belongsTo(TimeSlot::class);
+        return $this->belongsTo(TimeSlots::class);
     }
 }

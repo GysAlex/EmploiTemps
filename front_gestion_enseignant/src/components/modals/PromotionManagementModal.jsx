@@ -12,8 +12,8 @@ export const PromotionManagementModal = ({ promotionData }) => {
     const [formData, setFormData] = useState({
         name: '',
         level: 'Niveau 1',
-        students: '',
-        published: false, // Initialisation par défaut
+        // 'students' field is removed as it's now calculated dynamically on the backend
+        published: false, // Default initialization
     });
 
     useEffect(() => {
@@ -21,15 +21,15 @@ export const PromotionManagementModal = ({ promotionData }) => {
             setFormData({
                 name: promotionData.name || '',
                 level: promotionData.level || 'Niveau 1',
-                students: promotionData.students || '',
-                published: promotionData.published || false, // Utilisez la valeur existante
+                // 'students' field is removed from initialData assignment
+                published: promotionData.published || false, // Use existing value
             });
         } else {
             setFormData({
                 name: '',
                 level: 'Niveau 1',
-                students: '',
-                published: false, // Par défaut "En attente" pour une nouvelle promotion
+                // 'students' field is removed from default initialization
+                published: false, // Default "En attente" for a new promotion
             });
         }
         setValidationErrors({});
@@ -38,7 +38,7 @@ export const PromotionManagementModal = ({ promotionData }) => {
     const availableLevels = ["Niveau 1", "Niveau 2", "Niveau 3", "Niveau 4", "Niveau 5"];
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target; // On ne gère plus 'type' et 'checked' pour 'published' ici
+        const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -54,8 +54,8 @@ export const PromotionManagementModal = ({ promotionData }) => {
 
         let clientErrors = {};
         if (!formData.name.trim()) clientErrors.name = ['Le nom de la promotion est obligatoire.'];
-        if (formData.students <= 0 || isNaN(formData.students)) clientErrors.students = ['Le nombre d\'étudiants doit être un nombre positif.'];
-        
+        // Removed client-side validation for 'students'
+
         if (Object.keys(clientErrors).length > 0) {
             setValidationErrors(clientErrors);
             return;
@@ -64,11 +64,8 @@ export const PromotionManagementModal = ({ promotionData }) => {
         const promoToSave = {
             name: formData.name,
             level: formData.level,
-            students: parseInt(formData.students, 10),
-            // Le champ 'published' n'est plus envoyé depuis le frontend,
-            // car sa valeur est gérée par le backend ou d'autres processus.
-            // Si le backend le requiert toujours, il devra avoir une valeur par défaut.
-            // Pour l'instant, on suppose qu'il n'est plus une entrée utilisateur directe ici.
+            // 'students' field is no longer sent from the frontend
+            // 'published' field is also not sent as it's a derived status
         };
 
         try {
@@ -85,11 +82,11 @@ export const PromotionManagementModal = ({ promotionData }) => {
 
     const modalTitle = isEditing ? 'Modifier la promotion' : 'Ajouter une promotion';
 
-    // Déterminer le statut et les classes de couleur pour 'published'
-    const publishedStatusText = formData.published ? "Oui" : "En attente";
-    const publishedStatusClasses = formData.published
-        ? "bg-green-100 text-green-700 border-green-300" // Vert pour "Oui"
-        : "bg-orange-100 text-orange-700 border-orange-300"; // Orange pour "En attente"
+    // Determine the status and color classes for 'published'
+    const publishedStatusText = promotionData?.published ? "Oui" : "En attente"; // Use promotionData.published directly
+    const publishedStatusClasses = promotionData?.published
+        ? "bg-green-100 text-green-700 border-green-300" // Green for "Oui"
+        : "bg-orange-100 text-orange-700 border-orange-300"; // Orange for "En attente"
 
     return (
         <form
@@ -153,29 +150,6 @@ export const PromotionManagementModal = ({ promotionData }) => {
                     </select>
                     {validationErrors.level && (
                         <p className="text-red-500 text-xs mt-1">{validationErrors.level[0]}</p>
-                    )}
-                </div>
-
-                {/* Champ Nombre d'étudiants */}
-                <div className="space-y-2">
-                    <label htmlFor="students" className="flex items-center text-sm font-medium text-gray-700">
-                        <i className="fas fa-users w-4 h-4 mr-2 text-teal-600"></i>
-                        Nombre d'étudiants
-                    </label>
-                    <input
-                        type="number"
-                        id="students"
-                        name="students"
-                        value={formData.students}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                            validationErrors.students ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-teal-500'
-                        }`}
-                        min="1"
-                        required
-                    />
-                    {validationErrors.students && (
-                        <p className="text-red-500 text-xs mt-1">{validationErrors.students[0]}</p>
                     )}
                 </div>
 

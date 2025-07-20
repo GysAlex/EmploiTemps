@@ -1,28 +1,38 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
+import { usePromotions } from "../hooks/usePromotions"; // Importez votre hook usePromotions
+import { FaPlus } from "react-icons/fa"; // Importez l'icône plus si ce n'est pas déjà fait
 
 export default function PromotionsTable() {
-  const promotions = [
-    { id: 1, name: "Promotion Alpha", level: 1, students: 180, schedulePublished: true },
-    { id: 2, name: "Promotion Beta", level: 1, students: 165, schedulePublished: false },
-    { id: 3, name: "Promotion Gamma", level: 1, students: 175, schedulePublished: true },
-    { id: 4, name: "Promotion Delta", level: 2, students: 155, schedulePublished: true },
-    { id: 5, name: "Promotion Epsilon", level: 2, students: 140, schedulePublished: false },
-    { id: 6, name: "Promotion Zeta", level: 2, students: 130, schedulePublished: true },
-    { id: 7, name: "Promotion Eta", level: 3, students: 120, schedulePublished: false },
-    { id: 8, name: "Promotion Theta", level: 3, students: 105, schedulePublished: true },
-    { id: 9, name: "Promotion Iota", level: 3, students: 75, schedulePublished: false },
-  ];
-
+  const { promotions, loading, error } = usePromotions(); // Utilisez le hook pour accéder aux données
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredPromotions = useMemo(() => {
     const term = searchTerm.toLowerCase();
+    // Filtrez les promotions uniquement si elles sont chargées
     return promotions.filter((p) => p.name.toLowerCase().includes(term));
-  }, [searchTerm]);
+  }, [searchTerm, promotions]); // Ajoutez 'promotions' aux dépendances
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0694A2]"></div>
+        <p className="ml-4 text-gray-600">Chargement des promotions...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 p-8">
+        <p>Erreur lors du chargement des promotions.</p>
+        <p>Veuillez réessayer plus tard.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Search Bar */}
+      {/* Barre de recherche */}
       <div className="mb-6 flex items-center gap-2 justify-between">
         <input
           type="text"
@@ -32,12 +42,12 @@ export default function PromotionsTable() {
           className="w-full max-w-[350px] px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0694A2] focus:border-transparent"
         />
         <button className="px-3 py-2 flex items-center gap-2 cursor-pointer text-white bg-[#0694A2] rounded-2xl ">
-            <i className="fa-solid fa-plus"></i>
+            <FaPlus className="text-white" /> {/* Utilisez l'icône React */}
             <span className="hidden md:block">ajouter une promotion</span>
         </button>
       </div>
 
-      {/* Desktop Table */}
+      {/* Tableau pour les grands écrans */}
       <div className="hidden lg:block overflow-x-auto bg-white border border-gray-100 rounded-lg shadow-sm">
         <table className="min-w-full text-sm text-left">
           <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
@@ -55,12 +65,14 @@ export default function PromotionsTable() {
                 <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">{promo.name}</td>
                 <td className="px-6 py-4">
                   <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600 font-medium">
+                    {/* Assurez-vous que la propriété 'level' correspond à ce que votre API retourne */}
                     Niveau {promo.level}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-gray-700">{promo.students}</td>
+                <td className="px-6 py-4 text-gray-700">{promo.students.length}</td>
                 <td className="px-6 py-4">
-                  {promo.schedulePublished ? (
+                  {/* Assurez-vous que la propriété 'schedulePublished' correspond à ce que votre API retourne */}
+                  {promo.published ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
@@ -94,7 +106,7 @@ export default function PromotionsTable() {
         </table>
       </div>
 
-      {/* Mobile/Tablet Cards */}
+      {/* Cartes pour mobile/tablette */}
       <div className="lg:hidden space-y-4">
         {filteredPromotions.map((promo) => (
           <div key={promo.id} className="bg-white border border-gray-100 rounded-lg shadow-sm p-4">
@@ -104,7 +116,7 @@ export default function PromotionsTable() {
                 Gérer
               </button>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Niveau:</span>
@@ -112,12 +124,12 @@ export default function PromotionsTable() {
                   Niveau {promo.level}
                 </span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Étudiants:</span>
-                <span className="text-sm text-gray-700 font-medium">{promo.students}</span>
+                <span className="text-sm text-gray-700 font-medium">{promo.students.length}</span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Emploi du temps:</span>
                 {promo.schedulePublished ? (
@@ -139,7 +151,7 @@ export default function PromotionsTable() {
             </div>
           </div>
         ))}
-        
+
         {filteredPromotions.length === 0 && (
           <div className="bg-white border border-gray-100 rounded-lg shadow-sm p-8 text-center text-gray-500">
             Aucune promotion trouvée.

@@ -11,8 +11,6 @@ class TimeSlotsTableSeeder extends Seeder
 
     public function run(): void
     {
-        // ATTENTION : À utiliser avec prudence en production si des TimeSlots sont déjà en usage.
-        TimeSlots::truncate();
 
         // Définir tous les jours de la semaine, y compris le week-end
         $daysOfWeek = [
@@ -53,7 +51,7 @@ class TimeSlotsTableSeeder extends Seeder
                 $durationMinutes = round(abs($endTime - $startTime) / 60);
 
                 // Utilisation du modèle Eloquent pour créer l'entrée
-                TimeSlot::create([
+                TimeSlots::create([
                     'start_time' => $slot['start_time'],
                     'end_time' => $slot['end_time'],
                     'day_of_week' => $day,

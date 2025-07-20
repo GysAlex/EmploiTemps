@@ -1,9 +1,19 @@
 import { useState } from "react"
 import { useAuth } from "../hooks/useAuth" // Assure-toi que useAuth est bien ton AuthContext
 import { Link, Navigate, useNavigate } from "react-router-dom" // Ajout de useNavigate pour la redirection
+import { useUser } from "../hooks/useUser"
 
 export function Login() {
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+    })
+    const [validationErrors, setValidationErrors] = useState({})
+    const [isSubmitting, setIsSubmitting] = useState(false) 
+
+    const [showPassword, setShowPassword] = useState(false)
     const { state, login, setUserState } = useAuth()
+    const {fetchUser } = useUser()
 
     const Spinner = () => (
     <div className="flex justify-center items-center h-screen">
@@ -19,15 +29,8 @@ export function Login() {
     else if(state==true)
         return <Navigate to="/dashboard" />
 
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-    })
 
-    const [validationErrors, setValidationErrors] = useState({})
-    const [isSubmitting, setIsSubmitting] = useState(false) // État pour le spinner du bouton
 
-    const [showPassword, setShowPassword] = useState(false)
 
     // Fonction de validation côté client
     const validateField = (name, value) => {
@@ -92,6 +95,7 @@ export function Login() {
         try {
             await login(formData)
             setUserState(true)
+            await fetchUser()
         } catch (error) {
             console.error('Erreur de connexion:', error)
             if (error.response && error.response.data && error.response.data.errors) {

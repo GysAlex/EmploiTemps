@@ -5,19 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Promotion;
 use App\Models\Week;
-use App\Models\Timetable; // Assurez-vous d'importer le modèle Timetable
+use App\Models\Timetable;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail; // Import the Mail facade
+use App\Mail\TimetablePublishedMail; // Import your Mailable class
+use App\Models\Student; // Import the Student model to find the delegate
+use Illuminate\Support\Facades\Log; // For logs
 
 class TimetablePromotionController extends Controller
 {
-   /**
-     * Display a listing of the promotions with their timetable status for a given week.
-     * Level filtering is expected to be handled on the frontend.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
+
     public function index(Request $request)
     {
         // --- 1. Déterminer la semaine à analyser ---
@@ -50,13 +48,6 @@ class TimetablePromotionController extends Controller
         }
 
         $query = Promotion::query();
-
-        // --- RETIREMENT DU FILTRAGE PAR NIVEAU ICI (à faire côté frontend) ---
-        // La ligne suivante est commentée/supprimée car le filtrage par niveau sera géré par le frontend
-        // $level = $request->query('level');
-        // if ($level && $level !== 'Tous les niveaux') {
-        //     $query->where('level', $level);
-        // }
 
         // --- 2. Recherche par Nom de Promotion (reste côté backend) ---
         $searchTerm = $request->query('search');
@@ -131,5 +122,151 @@ class TimetablePromotionController extends Controller
                 'promotionsSansEDT' => $promotionsSansEDT,
             ]
         ]);
+    }
+
+    public function checkOrCreate(Request $request)
+    {
+        try {
+            // 1. Valider les données entrantes
+            $validatedData = $request->validate([
+                'promotion_id' => ['required', 'integer', 'exists:promotions,id'],
+                'week_id' => ['required', 'integer', 'exists:weeks,id'],
+            ],
+            [
+                'promotion_id.required' => 'Le champ promotion_id est requis.',
+                'week_id.required' => 'Le champ week_id est requis.',
+                'promotion_id.exists' => 'La promotion sélectionnée n\'existe pas.',
+                'week_id.exists' => 'La semaine sélectionnée n\'existe pas.',
+            ]
+        );
+
+            $promotionId = $validatedData['promotion_id'];
+            $weekId = $validatedData['week_id'];
+
+            // 2. Tenter de trouver un emploi du temps existant
+            $timetable = Timetable::where('promotion_id', $promotionId)
+                                  ->where('week_id', $weekId)
+                                  ->first();
+
+            // 3. Si l'emploi du temps n'existe pas, le créer
+            if (!$timetable) {
+                $timetable = Timetable::create([
+                    'promotion_id' => $promotionId,
+                    'week_id' => $weekId,
+                    // Ajoutez d'autres champs par défaut si nécessaire
+                ]);
+                $message = 'Emploi du temps créé avec succès.';
+                $statusCode = 201; // Created
+            } else {
+                $message = 'Emploi du temps existant récupéré.';
+                $statusCode = 200; // OK
+            }
+
+            // 4. Retourner l'emploi du temps (existant ou nouveau)
+            return response()->json([
+                'message' => $message,
+                'timetable' => $timetable,
+            ], $statusCode);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Erreur de validation.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la vérification/création de l\'emploi du temps.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+        public function publish(Timetable $timetable)
+    {
+        try {
+            // Load necessary relationships for PDF generation and email sending
+            $timetable->load(['promotion', 'week', 'courseSessions.course', 'courseSessions.teacher', 'courseSessions.classroom', 'courseSessions.timeSlot']);
+
+            $promotion = $timetable->promotion;
+
+            if (!$promotion) {
+                return response()->json(['message' => 'Promotion associated with the timetable not found.'], 404);
+            }
+
+            // Find the promotion delegate
+            $delegate = $promotion->students()->where('delegate', true)->first();
+
+            if ($delegate && $delegate->email) {
+                // Generate the PDF
+                // Make sure the 'pdfs.timetable' view exists and is well-formatted.
+                $pdf = \PDF::loadView('pdfs.timetable', compact('timetable', 'promotion'));
+                $pdfContent = $pdf->output(); // Get the binary content of the PDF
+
+                // Send the email with the PDF as an attachment
+                // It is recommended to queue mail deliveries for better performance
+                Mail::to($delegate->email)->send(new TimetablePublishedMail($promotion, $timetable, $pdfContent));
+                Log::info("Timetable email sent to delegate {$delegate->email} for promotion {$promotion->name}.");
+
+                return response()->json([
+                    'message' => 'Timetable published and email sent to delegate successfully.',
+                ], 200);
+
+            } else {
+                Log::warning("No delegate found or missing email address for promotion {$promotion->name}. Email not sent.");
+                return response()->json([
+                    'message' => 'Timetable published, but no email sent (delegate not found or missing email).',
+                ], 200); // Status 200 because publication succeeded, only mail sending failed.
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error publishing timetable and sending email: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while publishing the timetable.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function downloadPdf(Timetable $timetable)
+    {
+        try {
+            // Load necessary relationships for the PDF view
+            $timetable->load(['courseSessions.course', 'courseSessions.teacher', 'courseSessions.classroom', 'courseSessions.timeSlot', 'week', 'promotion']);
+            $promotion = $timetable->promotion; // Get the associated promotion
+
+            // Check if promotion and week are loaded
+            if (!$promotion || !$timetable->week) {
+                return response()->json(['message' => 'Incomplete timetable data for PDF generation.'], 404);
+            }
+
+            // Generate the PDF from the Blade view
+            // Make sure the 'pdfs.timetable' view exists and is correctly formatted.
+            $pdf = \PDF::loadView('pdfs.timetable', compact('timetable', 'promotion'));
+
+            // PDF file name
+            $fileName = 'timetable_' . $promotion->slug . '_week_' . $timetable->week->week_id . '.pdf';
+
+            // Return the PDF for download
+            return $pdf->download($fileName);
+
+        } catch (\Exception $e) {
+            \Log::error('Error generating timetable PDF: ' . $e->getMessage());
+            return response()->json(['message' => 'An error occurred while generating the timetable PDF.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function previewPdfHtml(Timetable $timetable)
+    {
+        // Charger les relations nécessaires pour le template Blade
+        $timetable->load(['promotion', 'week', 'courseSessions.course', 'courseSessions.teacher', 'courseSessions.classroom', 'courseSessions.timeSlot']);
+
+        // Extraire la promotion pour la passer directement à la vue
+        $promotion = $timetable->promotion;
+
+        // Retourner la vue Blade directement, en passant à la fois l'emploi du temps et la promotion
+        return view('pdfs.timetable', compact('timetable', 'promotion'));
     }
 }

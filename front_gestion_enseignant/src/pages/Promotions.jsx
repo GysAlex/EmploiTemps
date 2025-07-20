@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useModal } from "../hooks/useModal";
@@ -32,6 +33,8 @@ export default function PromotionsManagementPage() {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [levelFilter, setLevelFilter] = useState("Tous les niveaux");
+
+    console.log(promotions)
 
     const weekRange = getCurrentWeekRange();
 
@@ -93,7 +96,7 @@ export default function PromotionsManagementPage() {
 
     // Calculer les statistiques à partir du tableau complet des promotions
     const totalPromotions = promotions?.length || 0;
-    const totalStudents = promotions?.reduce((acc, cur) => acc + (cur.students || 0), 0) || 0;
+    const totalStudents = promotions?.reduce((acc, cur) => acc + (cur.students?.length || 0), 0) || 0;
     const publishedCount = promotions?.filter((p) => p.published).length || 0;
     const unpublishedCount = promotions?.filter((p) => !p.published).length || 0;
 
@@ -316,7 +319,7 @@ export default function PromotionsManagementPage() {
                                         </p>
                                         <p className="text-sm text-gray-600">
                                             <i className="fas fa-users w-4 h-4 mr-2 text-teal-600"></i>
-                                            Étudiants: {promo.students}
+                                            Étudiants: {promo.students.length}
                                         </p>
                                         <div className="flex items-center">
                                             <i className="fas fa-calendar-check w-4 h-4 mr-2 text-teal-600"></i>
@@ -337,11 +340,14 @@ export default function PromotionsManagementPage() {
                                             >
                                                 <i className="fas fa-trash text-sm"></i>
                                             </button>
-                                            <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded"
-                                                title="Gérer l'emploi du temps"
+                                            {/* Lien pour la gestion des étudiants (vue mobile) */}
+                                            <Link
+                                                to={`/dashboard/promotions/${promo.id}/students`} // Assurez-vous que cette route est définie dans votre Routeur
+                                                className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded"
+                                                title="Gérer les étudiants"
                                             >
                                                 Gérer
-                                            </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>
@@ -396,7 +402,7 @@ export default function PromotionsManagementPage() {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                     <i className="fas fa-users mr-2 text-gray-400"></i>
-                                                    {promo.students} étudiants
+                                                    {promo.students.length} étudiants
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                     {getPublicationBadge(promo.published)}
@@ -417,11 +423,14 @@ export default function PromotionsManagementPage() {
                                                         >
                                                             <i className="fas fa-trash"></i>
                                                         </button>
-                                                        <button className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded"
-                                                            title="Gérer l'emploi du temps"
+                                                        {/* Lien pour la gestion des étudiants (vue desktop) */}
+                                                        <Link
+                                                            to={`/dashboard/promotions/${promo.id}/students`} // Assurez-vous que cette route est définie dans votre Routeur
+                                                            className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded"
+                                                            title="Gérer les étudiants"
                                                         >
                                                             Gérer
-                                                        </button>
+                                                        </Link>
                                                     </div>
                                                 </td>
                                             </tr>

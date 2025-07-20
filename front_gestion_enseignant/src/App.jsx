@@ -14,6 +14,8 @@ import Courses from './pages/Courses'
 import TimeTableList from './pages/TimeTableList'
 import { PromotionProvider } from './hooks/usePromotions'
 import { TimetableProviderManagement } from './hooks/useManageTimeTables'
+import ScheduleCalendar from './pages/ScheduleCalendar'
+import TeacherSchedule from './pages/TeacherSchedule'
 
 
 const routes = createBrowserRouter([
@@ -57,6 +59,18 @@ const routes = createBrowserRouter([
 			{
 				path: 'schedules',
 				element: <TimetableProviderManagement><TimeTableList /></TimetableProviderManagement> 
+			},
+			{
+				path: 'schedule/:promotionId/:action',
+				element: <ScheduleCalendar />
+			},
+			{
+				path: 'promotions/:promotionId/students',
+				element: <PromotionDetail />
+			},
+			{
+				path: 'my-schedule',
+				element: <TeacherSchedule />
 			}
 		]
 	},
@@ -68,7 +82,6 @@ const routes = createBrowserRouter([
 ])
 
 function App() {
-
 	return <RouterProvider router={routes} />
 }
 

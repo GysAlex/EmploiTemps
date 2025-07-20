@@ -39,6 +39,7 @@ const Classrooms = () => {
         fetchClassrooms();
     }, []); 
 
+
     /* Filtrage des salles de classe - effectué directement ici */
     const filteredRooms = (() => {
         if (loading && classrooms.length === 0) return [];

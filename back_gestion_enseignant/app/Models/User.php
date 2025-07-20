@@ -69,4 +69,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(CourseSession::class, 'teacher_id'); // 'teacher_id' est la FK pour les enseignants
     }
+
+    public function courses()
+    {
+        return $this->hasMany(Course::class);
+    }
 }

@@ -26,21 +26,19 @@ export const UserProvider = ({ children }) => {
             });
 
             if (response.data) {
-                // S'assure que 'roles' est un tableau avant de mapper
                 const userRoles = Array.isArray(response.data.roles) 
                     ? response.data.roles.map((role) => role.name)
                     : []; // Définit un tableau vide si ce n'est pas un tableau
 
                 const userData = {
                     ...response.data,
-                    profile_image: formatImageUrl(response.data.profile_image),
+                    profile_image: formatImageUrl(response.data.profile_image, response.data.name),
                     roles: userRoles // Utilise les rôles formatés
                 };
+                console.log(userData)
                 setUser(userData);
-                // console.log("Données utilisateur récupérées :", userData); // À commenter/supprimer en production
             } else {
                 setUser(null);
-                // console.log("Aucune donnée utilisateur reçue, peut-être non authentifié."); // À commenter/supprimer en production
             }
         } catch (err) {
             console.error("Erreur lors de la récupération des données utilisateur:", err);
